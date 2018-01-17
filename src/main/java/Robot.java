@@ -1,6 +1,7 @@
 public class Robot {
     private int xPos;
     private int yPos;
+    private String position;
     private String orientation;
     private String lastValidPosition;
     private boolean lost;
@@ -10,11 +11,16 @@ public class Robot {
         this.yPos = yPos;
         this.orientation = orientation;
         this.lost = false;
+        this.position = null;
         this.lastValidPosition = null;
     }
 
     public void setLost(boolean lost) {
         this.lost = lost;
+    }
+
+    public boolean isLost() {
+        return lost;
     }
 
     public int getxPos() {
@@ -30,38 +36,65 @@ public class Robot {
     }
 
     public String getPosition() {
-        return getxPos() + " " + getyPos() + " " + getOrientation();
+        if(this.isLost()){
+            return getLastValidPosition() + " LOST";
+        } else {
+            return getxPos() + " " + getyPos() + " " + getOrientation();
+        }
+
     }
 
-    public boolean validatePosition(int mapXMax, int mapYMax) {
-        if(this.xPos >= 0 && this.xPos <= mapXMax && this.yPos >= 0 && this.xPos <= mapYMax) {
+    public boolean isValidPosition(Map map) {
+        if (this.xPos >= 0 &&
+            this.yPos >= 0 &&
+            this.xPos <= map.getxMax() &&
+            this.yPos <= map.getyMax() ) {
             return true;
+        } else {
+            return false;
         }
-        return false;
+    }
+
+    public void validatePosition(Map map) {
+        if(isValidPosition(map)){
+            setLastValidPosition(this.getPosition());
+        } else {
+            setLost(true);
+            if (!map.getLostRobots().contains(getLastValidPosition())) {
+                map.addLostRobot(getLastValidPosition());
+            }
+        }
+    }
+
+    public void setLastValidPosition(String lastValidPosition) {
+        this.lastValidPosition = lastValidPosition;
     }
 
     public String getLastValidPosition() {
         return lastValidPosition;
     }
 
-    public void activate(String instructions) {
+    public void activate(String instructions, Map map) {
         String[] instructionsArray = instructions.split("(?!^)");
-        for (String instruction : instructionsArray) {
-            switch(instruction) {
-                case "L":
-                    turnLeft();
-                    break;
-                case "R":
-                    turnRight();
-                    break;
-                case "F":
-                    goForward();
-                    break;
-                default:
-                    System.out.println("Invalid instruction");
-                    break;
+            for (String instruction : instructionsArray) {
+                validatePosition(map);
+                if (isValidPosition(map)) {
+                    switch (instruction) {
+                        case "L":
+                            turnLeft();
+                            break;
+                        case "R":
+                            turnRight();
+                            break;
+                        case "F":
+                            goForward();
+                            break;
+                        default:
+                            System.out.println("Invalid instruction");
+                            break;
+                    }
+                }
             }
-        }
     }
 
     public void turnLeft() {
